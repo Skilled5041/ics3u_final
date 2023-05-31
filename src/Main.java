@@ -5,7 +5,7 @@ public class Main {
   public static void main(String[] args) {
     try {
       Scanner sc = new Scanner(System.in);
-      ClientSocket client = new ClientSocket(new Socket("10.241.234.18", 7272), "Client1");
+      ClientSocket client = new ClientSocket(new Socket("localhost", 7272), "example_username");
 
       client.printInfo();
       client.receive();
