@@ -17,6 +17,12 @@ public class Tetris {
             }
             try {
                 int times = Integer.parseInt(sc.nextLine());
+                if (direction.equals("r")) {
+                    board.rotatePiece(times);
+                    board.printBoard();
+                    System.out.println();
+                    continue;
+                }
                 IntStream.range(0, times).forEach(i -> {
                     board.movePiece(TetrisBoard.MovementDirection.valueOf(direction));
                 });

@@ -1,3 +1,5 @@
+import java.awt.*;
+
 public class TetrominoShape {
     public enum Shapes {
         I, J, L, O, S, T, Z
@@ -75,19 +77,19 @@ public class TetrominoShape {
     private boolean isEmptyRow(TetrominoSquare[] row) {
         for (TetrominoSquare square : row) {
             if (square.state != TetrominoSquare.State.EMPTY) {
-                return false;
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     private boolean isEmptyColumn(TetrominoSquare[][] squares, int column) {
         for (TetrominoSquare[] row : squares) {
             if (row[column].state != TetrominoSquare.State.EMPTY) {
-                return false;
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     /**
@@ -101,7 +103,7 @@ public class TetrominoShape {
 
         // Find the first non-empty row
         for (int i = 0; i < this.squares.length; i++) {
-            if (!isEmptyRow(this.squares[i])) {
+            if (isEmptyRow(this.squares[i])) {
                 startRow = i;
                 break;
             }
@@ -109,7 +111,7 @@ public class TetrominoShape {
 
         // Find the last non-empty row
         for (int i = this.squares.length - 1; i >= 0; i--) {
-            if (!isEmptyRow(this.squares[i])) {
+            if (isEmptyRow(this.squares[i])) {
                 endRow = i;
                 break;
             }
@@ -120,7 +122,7 @@ public class TetrominoShape {
 
         // Find the first non-empty column
         for (int i = 0; i < this.squares[0].length; i++) {
-            if (!isEmptyColumn(this.squares, i)) {
+            if (isEmptyColumn(this.squares, i)) {
                 startColumn = i;
                 break;
             }
@@ -128,7 +130,7 @@ public class TetrominoShape {
 
         // Find the last non-empty column
         for (int i = this.squares[0].length - 1; i >= 0; i--) {
-            if (!isEmptyColumn(this.squares, i)) {
+            if (isEmptyColumn(this.squares, i)) {
                 endColumn = i;
                 break;
             }
