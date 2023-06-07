@@ -2,6 +2,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.logging.Logger;
 
 public class TetrisBoard {
     public enum MovementDirection {
@@ -66,6 +67,51 @@ public class TetrisBoard {
     public void spawnNewTetromino() {
         this.currentPiece = this.tetrominoQueue.remove();
         this.tetrominoQueue.add(randomTetrominoShape());
+        this.currentPieceCordinates.clear();
+        this.currentPieceRelativeCordinates.clear();
+        this.highestPieceRow = 24;
+
+        TetrominoSquare[][] shrunkenShape = this.currentPiece.shrink();
+
+        int xOffset = shrunkenShape[0].length % 2;
+        int yOffset = 0;
+        if (this.currentPiece.shape == TetrominoShape.Shapes.I) {
+            xOffset = 1;
+            yOffset = 1;
+        }
+
+        int halfLength = this.currentPiece.squares.length / 2;
+
+        // Merge the piece into the array
+        for (int i = 0; i < shrunkenShape[0].length; i++) {
+            for (int j = 0; j < shrunkenShape.length; j++) {
+                if (shrunkenShape[j][i].state != TetrominoSquare.State.EMPTY) {
+                    this.board[i + 4 - xOffset][j + 2 + yOffset].colour = shrunkenShape[j][i].colour;
+                    this.board[i + 4 - xOffset][j + 2 + yOffset].state = shrunkenShape[j][i].state;
+                    this.currentPieceCordinates.add(new Point(i + 4 - xOffset, j + 2 + yOffset));
+
+                    int relativeX = i - halfLength;
+                    int relativeY = j - halfLength;
+
+                    // Edge case fixes for even length pieces
+                    if (this.currentPiece.squares.length % 2 == 0) {
+                        if (this.currentPiece.shape == TetrominoShape.Shapes.I) {
+                            relativeY = -1;
+                        } else if (j - halfLength >= 0) {
+                            relativeY++;
+                        }
+                        if (i - halfLength >= 0) {
+                            relativeX++;
+                        }
+                    }
+                    this.currentPieceRelativeCordinates.add(new Point(relativeX, relativeY));
+                }
+            }
+        }
+    }
+
+    public void spawnNewTetromino(TetrominoShape.Shapes shapes) {
+        this.currentPiece = new TetrominoShape(shapes);
         this.currentPieceCordinates.clear();
         this.currentPieceRelativeCordinates.clear();
         this.highestPieceRow = 24;
@@ -221,7 +267,9 @@ public class TetrisBoard {
             return;
         }
 
+        System.out.println(currentPieceRelativeCordinates);
         if (rotations == 1) {
+            System.out.println(currentPieceCordinates);
             for (int i = 0; i < this.currentPieceRelativeCordinates.size(); i++) {
                 int oldX = this.currentPieceCordinates.get(i).x;
                 int oldY = this.currentPieceCordinates.get(i).y;
@@ -236,22 +284,16 @@ public class TetrisBoard {
 
                 int newRelativeX = point.x;
                 int newRelativeY = point.y;
-                
+
                 int xDiff = newRelativeX - oldRelativeX;
                 int yDiff = newRelativeY - oldRelativeY;
 
+                if (this.currentPiece.shape == TetrominoShape.Shapes.I) {
+
+                }
+
                 int translatedX = this.currentPieceCordinates.get(i).x + xDiff;
                 int translatedY = this.currentPieceCordinates.get(i).y + yDiff;
-//
-//                System.out.println(translatedY);
-//                System.out.println(oldRelativeY);
-//                
-//                if (this.currentPiece.shape == TetrominoShape.Shapes.I) {
-//                    if (oldRelativeX >= 0) {
-//                        translatedX++;
-//                        translatedY--;
-//                    }
-//                }
 
                 this.currentPieceCordinates.get(i).x = translatedX;
                 this.currentPieceCordinates.get(i).y = translatedY;
@@ -259,6 +301,8 @@ public class TetrisBoard {
                 this.board[oldX][oldY].colour = TetrominoSquare.Colours.EMPTY;
                 this.board[oldX][oldY].state = TetrominoSquare.State.EMPTY;
             }
+            System.out.println(currentPieceRelativeCordinates);
+            System.out.println(currentPieceCordinates);
         } else if (rotations == 2) {
             for (int i = 0; i < this.currentPieceRelativeCordinates.size(); i++) {
                 int oldX = this.currentPieceCordinates.get(i).x;
@@ -267,7 +311,6 @@ public class TetrisBoard {
                 int oldRelativeY = this.currentPieceRelativeCordinates.get(i).y;
 
                 Point point = this.currentPieceRelativeCordinates.get(i);
-                int x = point.x;
 
                 point.x = -point.x;
                 point.y = -point.y;
@@ -308,6 +351,8 @@ public class TetrisBoard {
         for (Point pt : currentPieceCordinates) {
             board[pt.x][pt.y].colour = currentPiece.colour;
             board[pt.x][pt.y].state = TetrominoSquare.State.FALLING;
+            printBoard();
+            System.out.println();
         }
     }
 

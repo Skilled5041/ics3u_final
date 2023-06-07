@@ -6,7 +6,7 @@ public class Tetris {
         Scanner sc = new Scanner(System.in);
 
         TetrisBoard board = new TetrisBoard();
-        board.spawnNewTetromino();
+        board.spawnNewTetromino(/*TetrominoShape.Shapes.I*/);
         System.out.println();
         board.printBoard();
 
