@@ -72,9 +72,8 @@ public class TetrisBoard {
 
         int xOffset = this.currentPiece.squares[0].length % 2;
         int yOffset = 0;
-        if (this.currentPiece.shape == TetrominoShape.Shapes.I) {
+        if (this.currentPiece.shape == TetrominoShape.Shapes.I || this.currentPiece.shape == TetrominoShape.Shapes.O) {
             xOffset = 1;
-            yOffset = 1;
         }
 
         int halfLength = this.currentPiece.squares.length / 2;
