@@ -1,8 +1,10 @@
-public class TetrominoShape implements Cloneable{
+public class TetrominoShape implements Cloneable {
+    // Possible shapes
     public enum Shapes {
         I, J, L, O, S, T, Z
     }
 
+    // Possible rotations for each shape
     private final static int[][][][] TETROMINO_SHAPE_ARRAYS = {
             // I
             {
@@ -156,8 +158,14 @@ public class TetrominoShape implements Cloneable{
             }
     };
 
+    // The number of different rotation states for each shape
     private final int[] NUMBER_OF_ROTATION_STATES = {2, 4, 4, 1, 2, 4, 2};
 
+    /**
+     * Gets the number of rotation states for the shape of this tetromino
+     *
+     * @return The number of rotation states
+     */
     public int getNumberOfRotationStates() {
         return NUMBER_OF_ROTATION_STATES[this.shape.ordinal()];
     }
@@ -169,6 +177,11 @@ public class TetrominoShape implements Cloneable{
     // 0 = 0 degrees, 1 = 90 degrees, 2 = 180 degrees, 3 = 270 degrees
     private int rotation = 0;
 
+    /**
+     * Gets the current rotation of this tetromino
+     *
+     * @return The rotation of this tetromino
+     */
     public int getRotation() {
         return rotation;
     }
@@ -184,11 +197,13 @@ public class TetrominoShape implements Cloneable{
             return;
         }
         this.rotation = rotation % getNumberOfRotationStates();
+        
+        // Update the squares
         for (int i = 0; i < TETROMINO_SHAPE_ARRAYS[shape.ordinal()][this.rotation].length; i++) {
             for (int j = 0; j < TETROMINO_SHAPE_ARRAYS[shape.ordinal()][this.rotation][i].length; j++) {
                 if (TETROMINO_SHAPE_ARRAYS[shape.ordinal()][this.rotation][i][j] == 1) {
-                    this.squares[i][j] = new TetrominoSquare(TetrominoSquare.Colours.values()[shape.ordinal()],
-                            TetrominoSquare.State.FALLING);
+                    this.squares[i][j].state = TetrominoSquare.State.FALLING;
+                    this.squares[i][j].colour = this.colour;
                 } else {
                     this.squares[i][j] = new TetrominoSquare(TetrominoSquare.Colours.EMPTY,
                             TetrominoSquare.State.EMPTY);
@@ -197,6 +212,11 @@ public class TetrominoShape implements Cloneable{
         }
     }
 
+    /**
+     * Creates a new identical tetromino with the rotation and shape
+     *
+     * @return The new tetromino
+     */
     public TetrominoShape clone() throws CloneNotSupportedException {
         TetrominoShape clone = (TetrominoShape) super.clone();
         clone.setRotation(this.rotation);
@@ -211,6 +231,7 @@ public class TetrominoShape implements Cloneable{
         this.squares = new TetrominoSquare[TETROMINO_SHAPE_ARRAYS[shape.ordinal()][0].length]
                 [TETROMINO_SHAPE_ARRAYS[shape.ordinal()][0][0].length];
 
+        // Initialise the square array with the correct shape and data
         for (int i = 0; i < TETROMINO_SHAPE_ARRAYS[shape.ordinal()][0].length; i++) {
             for (int j = 0; j < TETROMINO_SHAPE_ARRAYS[shape.ordinal()][0][i].length; j++) {
                 if (TETROMINO_SHAPE_ARRAYS[shape.ordinal()][0][i][j] == 1) {

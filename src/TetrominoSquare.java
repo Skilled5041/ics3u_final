@@ -1,4 +1,6 @@
+// A single square on a tetromino or on the tetris board
 public class TetrominoSquare {
+    // Possible colours
     public enum Colours {
         CYAN,
         BLUE,
@@ -7,12 +9,19 @@ public class TetrominoSquare {
         GREEN,
         PURPLE,
         RED,
-        EMPTY
+        // No pieces occupy the square
+        EMPTY,
+        // Where the current piece would drop to
+        SHADOW
     }
 
+    // Possible states
     public enum State {
+        // Completely empty
         EMPTY,
+        // Contains a square that is already placed
         PLACED,
+        // Unplaced square / still falling
         FALLING
     }
 
