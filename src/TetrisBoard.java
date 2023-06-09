@@ -45,6 +45,7 @@ public class TetrisBoard {
 
     // The top left corner of the bounding box for the current piece
     private Point currentPieceTopLeftCorner;
+    private ArrayList<Point> shadowCoordinates;
 
     // Stores the highest row that contains a piece, 0 is the h ighest row
     private int highestPieceRow;
@@ -226,6 +227,7 @@ public class TetrisBoard {
         this.board = new TetrominoSquare[10][24];
         this.tetrominoQueue = new LinkedList<>();
         this.currentPieceCoordinates = new ArrayList<>();
+        this.shadowCoordinates = new ArrayList<>();
         this.highestPieceRow = 24;
 
         // Fill the board with empty squares
@@ -263,12 +265,21 @@ public class TetrisBoard {
                 }
             }
         }
+
+        shadowCoordinates = calculateFall();
+        for (Point point : shadowCoordinates) {
+            this.board[point.x][point.y].colour = TetrominoSquare.Colours.SHADOW;
+        }
     }
 
     /**
      * Places the current piece on the board
      */
     public void placePiece() {
+        for (Point point : shadowCoordinates) {
+            this.board[point.x][point.y].colour = TetrominoSquare.Colours.EMPTY;
+        }
+
         for (Point point : this.currentPieceCoordinates) {
             this.board[point.x][point.y].state = TetrominoSquare.State.PLACED;
             this.highestPieceRow = Math.min(this.highestPieceRow, point.y);
@@ -282,20 +293,17 @@ public class TetrisBoard {
      */
     public ArrayList<Point> calculateFall() {
         ArrayList<Point> newCoordinates = new ArrayList<>();
-        int fallRow = 24;
-        int amountToFall = 24;
+        int amountToFall = 0;
         for (Point point : this.currentPieceCoordinates) {
-            for (int i = 23; i > point.x; i--) {
-                if (this.board[point.x][i].state == TetrominoSquare.State.PLACED) {
-                    fallRow = Math.min(fallRow, i - 1);
-                    amountToFall = Math.min(amountToFall, fallRow - point.x - 1);
+            for (int i = 0; i <= 23; i++) {
+                if (this.board[point.x][i].state == TetrominoSquare.State.PLACED || i == 23) {
+                    amountToFall = Math.max(amountToFall, i - point.y - 1);
                     break;
                 }
             }
         }
 
         for (Point point : this.currentPieceCoordinates) {
-            System.out.println(point.y);
             newCoordinates.add(
                     new Point(point.x,
                             point.y + amountToFall
@@ -361,8 +369,14 @@ public class TetrisBoard {
             this.currentPieceTopLeftCorner.x++;
         }
 
-        ArrayList<Point> shadow = calculateFall();
-        for (Point point : shadow) {
+        for (Point point : shadowCoordinates) {
+            if (this.board[point.x][point.y].colour == TetrominoSquare.Colours.SHADOW) {
+                this.board[point.x][point.y].colour = TetrominoSquare.Colours.EMPTY;
+            }
+        }
+
+        shadowCoordinates = calculateFall();
+        for (Point point : shadowCoordinates) {
             this.board[point.x][point.y].colour = TetrominoSquare.Colours.SHADOW;
         }
 
