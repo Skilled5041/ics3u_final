@@ -12,7 +12,8 @@ public class TetrominoSquare {
         // No pieces occupy the square
         EMPTY,
         // Where the current piece would drop to
-        SHADOW
+        SHADOW,
+        DISABLED
     }
 
     // Possible states

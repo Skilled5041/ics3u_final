@@ -159,7 +159,7 @@ public class TetrominoShape implements Cloneable {
     };
 
     // The number of different rotation states for each shape
-    private final int[] NUMBER_OF_ROTATION_STATES = {2, 4, 4, 1, 2, 4, 2};
+    private final int[] NUMBER_OF_ROTATION_STATES = {4, 4, 4, 1, 4, 4, 4};
 
     /**
      * Gets the number of rotation states for the shape of this tetromino
@@ -197,7 +197,7 @@ public class TetrominoShape implements Cloneable {
             return;
         }
         this.rotation = rotation % getNumberOfRotationStates();
-        
+
         // Update the squares
         for (int i = 0; i < TETROMINO_SHAPE_ARRAYS[shape.ordinal()][this.rotation].length; i++) {
             for (int j = 0; j < TETROMINO_SHAPE_ARRAYS[shape.ordinal()][this.rotation][i].length; j++) {
@@ -242,6 +242,15 @@ public class TetrominoShape implements Cloneable {
                             TetrominoSquare.State.EMPTY);
                 }
             }
+        }
+    }
+
+    public void printPiece() {
+        for (int i = 0; i < TETROMINO_SHAPE_ARRAYS[shape.ordinal()][rotation].length; i++) {
+            for (int j = 0; j < TETROMINO_SHAPE_ARRAYS[shape.ordinal()][rotation][i].length; j++) {
+                System.out.print(TETROMINO_SHAPE_ARRAYS[shape.ordinal()][rotation][i][j] + " ");
+            }
+            System.out.println();
         }
     }
 }
