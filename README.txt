@@ -4,6 +4,7 @@ How to play:
 - Controls are listed in the about screen of the game
 - Do not edit config.txt
 - You can edit handling_settings.txt
+- It is recommended to edit it according to the recommendations of the about menu, unless you want very fast controls
 - All values must be positive integers
 - ARR is how fast the piece moves left and right when holding down a key (in ms)
 - DAS is how long it takes for the piece to start moving left or right when holding down a key (in ms) (how long you must hold down a key before the piece starts auto moving)
