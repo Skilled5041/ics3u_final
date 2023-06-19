@@ -1,0 +1,4 @@
+arr=0
+das=133
+sdf=0
+music_type=battle

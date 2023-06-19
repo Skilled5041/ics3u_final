@@ -1,4 +1,7 @@
-// A single square on a tetromino or on the tetris board
+// Aaron Ye
+// 2023-06-18
+// Tetromino Square
+// Represents a square in a tetromino / tetris board
 public class TetrominoSquare {
     // Possible colours
     public enum Colours {

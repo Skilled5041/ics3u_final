@@ -1,9 +1,18 @@
+// Aaron Ye
+// 2023-06-18
+// Tables
+// Tables for tetris logic
+
 import java.awt.Point;
 import java.util.HashMap;
 import java.util.Map;
 
 public class Tables {
-    // Positive X = translate right, Positive Y = translate down 
+    // Positive X = translate right, Positive Y = translate down
+    // Kick tables
+    // Attempts the kick the piece when rotating, if it is unable to rotate
+    // https://tetris.wiki/images/5/52/TETR.IO_180kicks.png
+    // https://tetris.wiki/Super_Rotation_System
     public static final Map<Utils.Pair<Integer, Integer>, Point[]> NON_I_WALL_KICK_DATA = new HashMap<>() {{
         put(new Utils.Pair<>(0, 1), new Point[]{
                 new Point(0, 0),

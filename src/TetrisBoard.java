@@ -1,28 +1,39 @@
+// Aaron Ye
+// 2023-06-18
+// Tetris board
+// Handles the game logic
+
 import javax.swing.Timer;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 
-import static java.util.Objects.hash;
+public class TetrisBoard { // Automatic repeat rate
+    // How often the piece moves when the player holds down a key
+    public static int arr = 0;
+    // Delayed auto shift
+    // How long the player has to hold down a key before the piece starts moving
+    public static int das = 133;
+    // Soft drop factor
+    // How much faster the piece moves when the player holds down the down key
+    // In ms
+    public static int sdf = 0;
+    public long lastSdfTime = -1;
+    public boolean softDropping = false;
+    // When the player started holding down a key
+    // Stored as UNIX time
+    // -1 if the player is not holding down a key
+    public long dasTime = -1;
+    public long lastDasTime = -1;
 
-public class TetrisBoard {
     // Possible directions to move the piece
     public enum MovementDirection {
         LEFT, RIGHT, DOWN
-    }
-
-    /**
-     * Generates a random integer between min and max (inclusive)
-     *
-     * @param min The minimum number
-     * @param max The maximum number
-     * @return A random integer between min and max (inclusive)
-     */
-    private int randomInteger(int min, int max) {
-        return (int) Math.floor(Math.random() * (max - min + 1) + min);
     }
 
     // The List of the coordinates for the non-empty squares of the current piece
@@ -31,7 +42,7 @@ public class TetrisBoard {
     private ArrayList<Point> currentPieceCoordinates;
 
     // 5 tetrominoes in the queue
-    private Queue<TetrominoShape> tetrominoQueue;
+    private final Queue<TetrominoShape> tetrominoQueue;
 
     /**
      * Returns the current tetromino queue
@@ -52,47 +63,83 @@ public class TetrisBoard {
     public boolean alreadyHeld = false;
 
     // Stores the highest row that contains a piece, 0 is the highest row
-    private int highestPieceRow;
+    public int highestPieceRow;
 
     private final Queue<TetrominoShape.Shapes> bag1 = new LinkedList<>();
     private final Queue<TetrominoShape.Shapes> bag2 = new LinkedList<>();
 
-    // Numer of rows per frame
+    // Number of rows per frame
     private double gravity = 0.02;
+    public int linesCleared = 0;
 
     // Delay in ms
     public int autoFallDelay = (int) (Game.FRAME_TIME / gravity);
-    private Timer autoFallTimer = new Timer(autoFallDelay, e -> movePiece(MovementDirection.DOWN));
+
+    // Piece locks after 0.5 seconds of no movement and being on the ground
     private int dropLockTime = 0;
+    public boolean gameStarted = false;
+    public boolean gameEnded = false;
+
+    // Can reset the lock delay up to 15 times
     private int dropLockResetCount = 0;
+    private int combo = 0;
     // How long it takes for the piece to lock after it drops
     private final int DROP_LOCK_DELAY = (int) (1000.0 / 60 * (30));
     public boolean toppedOut = false;
 
     /**
+     * Stops a timers and sets the game to ended
+     */
+    public void endGame() {
+        this.gameEnded = true;
+        this.autoFallTimer.stop();
+    }
+
+    // Makes the piece automatically fall
+    Timer autoFallTimer = new Timer(autoFallDelay, e -> movePiece(MovementDirection.DOWN));
+
+    /**
      * Runs every frame (1000 / 60 ms)
      */
     public void gameFrame() {
+        // Make the piece fall automatically
+        if (!gameStarted || gameEnded) {
+            autoFallTimer.stop();
+            return;
+        } else if (!autoFallTimer.isRunning()) {
+            autoFallTimer.start();
+        }
+
+        // Update the gravity
+        gravity += 0.00001;
+        autoFallDelay = (int) (Game.FRAME_TIME / gravity);
+        autoFallTimer.setDelay(autoFallDelay);
+
         if (tryMovePiece(MovementDirection.DOWN).isEmpty()) {
+            // Reset the drop lock reset time
             dropLockTime += 1000 / 60;
         }
 
+        // Lock the piece if it has been on the ground for a while
         if (dropLockTime >= DROP_LOCK_DELAY || dropLockResetCount >= 15) {
             dropLockTime = 0;
             dropLockResetCount = 0;
+            TetrisGraphics.playSound("soft_drop");
             placePiece();
         }
     }
 
     /**
-     * Gets a piece from the 7-bag implementation
+     * Gets a piece from the 7-bag implementation. Each cycle contains each piece once.
      *
      * @return a piece from the 7-bag implementation
      */
     public TetrominoShape getPieceFromBag() {
+        // Get from the first bag
         TetrominoShape piece = new TetrominoShape(this.bag1.remove());
         this.bag1.add(this.bag2.remove());
 
+        // Extra buffer to be able to show the next 5 pieces
         if (this.bag2.isEmpty()) {
             TetrominoShape.Shapes[] shapes = TetrominoShape.Shapes.values();
             Collections.shuffle(Arrays.asList(shapes));
@@ -102,26 +149,31 @@ public class TetrisBoard {
         return piece;
     }
 
+    /**
+     * Holds the current piece if it has not been held yet
+     */
     public void hold() throws CloneNotSupportedException {
         if (alreadyHeld) return;
 
+        TetrisGraphics.playSound("hold");
+        // Clear the current piece
         for (Point point : this.currentPieceCoordinates) {
             this.board[point.x][point.y].state = TetrominoSquare.State.EMPTY;
             this.board[point.x][point.y].colour = TetrominoSquare.Colours.EMPTY;
         }
 
+        // Clear the shadow
         for (Point point : this.shadowCoordinates) {
             this.board[point.x][point.y].state = TetrominoSquare.State.EMPTY;
             this.board[point.x][point.y].colour = TetrominoSquare.Colours.EMPTY;
         }
 
+        // Hold the piece
         if (this.holdPiece == null) {
             this.holdPiece = this.currentPiece.clone();
             holdPiece.setRotation(0);
-
             spawnNewTetromino();
         } else {
-
             TetrominoShape temp = this.currentPiece.clone();
             this.currentPiece = this.holdPiece.clone();
             this.holdPiece = temp;
@@ -147,13 +199,6 @@ public class TetrisBoard {
      */
     public int score() {
         return this.score;
-    }
-
-    /**
-     * Resets the player's score to 0
-     */
-    private void resetScore() {
-        this.score = 0;
     }
 
     public TetrisBoard() {
@@ -192,6 +237,7 @@ public class TetrisBoard {
      * Spawns a new tetromino at the center top of the board, from the queue
      */
     public void spawnNewTetromino() {
+        this.tetrominoQueue.add(getPieceFromBag());
         spawnNewTetromino(this.tetrominoQueue.remove());
     }
 
@@ -203,7 +249,6 @@ public class TetrisBoard {
     public void spawnNewTetromino(TetrominoShape piece) {
         // Remove the current piece from the queue and add a new one
         this.currentPiece = piece;
-        this.tetrominoQueue.add(getPieceFromBag());
         this.alreadyHeld = false;
 
         // Reset the coordinates of the current piece
@@ -221,7 +266,7 @@ public class TetrisBoard {
                 }
             }
         }
-        
+
         // Merge the piece into the array
         for (int i = 0; i < this.currentPiece.squares[0].length; i++) {
             for (int j = 0; j < this.currentPiece.squares.length; j++) {
@@ -251,6 +296,31 @@ public class TetrisBoard {
         }
     }
 
+    enum ClearTypes {
+        SINGLE, DOUBLE, TRIPLE, QUAD, PERFECT_CLEAR
+    }
+
+    // The score for each type of clear
+    private final static Map<ClearTypes, Integer> SCORE_MAP = new HashMap<>() {{
+        put(ClearTypes.SINGLE, 100);
+        put(ClearTypes.DOUBLE, 300);
+        put(ClearTypes.TRIPLE, 500);
+        put(ClearTypes.QUAD, 800);
+        put(ClearTypes.PERFECT_CLEAR, 3500);
+    }};
+
+    /**
+     * Determines if the board is in a perfect clear state
+     *
+     * @return true if the board is in a perfect clear state, false otherwise
+     */
+    public boolean isPerfectClear() {
+        for (int i = 0; i < 10; i++) {
+            if (this.board[i][23].state != TetrominoSquare.State.EMPTY) return false;
+        }
+        return true;
+    }
+
     /**
      * Places the current piece on the board
      */
@@ -260,11 +330,34 @@ public class TetrisBoard {
             this.highestPieceRow = Math.min(this.highestPieceRow, point.y);
         }
 
-        ArrayList<Integer> rows = clearRows();
+        // Try clearing lines
+        ArrayList<Integer> rows = clearLines();
+
+        // Move the rows down
+        linesCleared += rows.size();
         int max = rows.stream().max(Integer::compare).isPresent() ? rows.stream().max(Integer::compare).get() : -1;
         if (max != -1) {
             moveRowsDown(max, highestPieceRow, rows);
         }
+
+        // Handle score
+        if (rows.size() == 0) combo = 0;
+        else {
+            combo++;
+            ClearTypes clearType = ClearTypes.values()[rows.size() - 1];
+            score += SCORE_MAP.get(clearType);
+            score += combo * 50;
+            if (rows.size() <= 3) {
+                TetrisGraphics.playSound("clear_line");
+            } else {
+                TetrisGraphics.playSound("clear_quad");
+            }
+            if (isPerfectClear()) {
+                score += SCORE_MAP.get(ClearTypes.PERFECT_CLEAR);
+                TetrisGraphics.playSound("perfect_clear");
+            }
+        }
+
         spawnNewTetromino();
     }
 
@@ -370,15 +463,23 @@ public class TetrisBoard {
         return newCoordinates;
     }
 
+    /**
+     * Moves the current piece in the specified direction
+     *
+     * @param direction the direction to move the piece in
+     **/
+
     public void movePiece(MovementDirection direction) {
         ArrayList<Point> newCoordinates = tryMovePiece(direction);
         if (newCoordinates.isEmpty()) return;
 
+        // Remove the current piece from the board
         for (Point point : this.currentPieceCoordinates) {
             this.board[point.x][point.y].state = TetrominoSquare.State.EMPTY;
             this.board[point.x][point.y].colour = TetrominoSquare.Colours.EMPTY;
         }
 
+        // Update the current piece's coordinates
         this.currentPieceCoordinates = newCoordinates;
         if (direction == MovementDirection.DOWN) {
             this.currentPieceTopLeftCorner.y++;
@@ -388,25 +489,29 @@ public class TetrisBoard {
             this.currentPieceTopLeftCorner.x++;
         }
 
+        // Remove the shadow
         for (Point point : shadowCoordinates) {
             if (this.board[point.x][point.y].colour == TetrominoSquare.Colours.SHADOW) {
                 this.board[point.x][point.y].colour = TetrominoSquare.Colours.EMPTY;
             }
         }
 
+        // Update the shadow
         shadowCoordinates = calculateFall();
         renderShadow(shadowCoordinates);
 
+        // Add the current piece to the board
         for (Point point : this.currentPieceCoordinates) {
             this.board[point.x][point.y].colour = this.currentPiece.colour;
             this.board[point.x][point.y].state = TetrominoSquare.State.FALLING;
         }
 
+        dropLockTime = 0;
+        // Increment the drop lock reset count
         dropLockResetCount++;
 
         if (!tryMovePiece(MovementDirection.DOWN).isEmpty()) {
             // If it can move down, reset the drop lock
-            dropLockTime = 0;
             dropLockResetCount = 0;
         }
     }
@@ -423,14 +528,18 @@ public class TetrisBoard {
             return;
         }
 
+        // Get the kick that was used to rotate the piece
         Point kick = calculateRotation(rotations);
 
+        // null means that the piece cannot be rotated
         if (kick == null) {
             return;
         }
 
+        // Set the rotation
         currentPiece.setRotation(currentPiece.getRotation() + rotations);
 
+        // Remove the current piece from the board
         for (Point point : this.currentPieceCoordinates) {
             this.board[point.x][point.y].colour = TetrominoSquare.Colours.EMPTY;
             this.board[point.x][point.y].state = TetrominoSquare.State.EMPTY;
@@ -438,6 +547,7 @@ public class TetrisBoard {
 
         this.currentPieceCoordinates.clear();
 
+        // Add the rotated piece to the board, using the kick
         for (int i = 0; i < currentPiece.squares.length; i++) {
             for (int j = 0; j < currentPiece.squares[i].length; j++) {
                 if (currentPiece.squares[i][j].state == TetrominoSquare.State.FALLING) {
@@ -447,22 +557,27 @@ public class TetrisBoard {
                 }
             }
         }
-        
+
+        // Update the top left corner
         currentPieceTopLeftCorner.x += kick.x;
         currentPieceTopLeftCorner.y += kick.y;
 
+        // Remove the shadow
         for (Point point : shadowCoordinates) {
             if (this.board[point.x][point.y].colour == TetrominoSquare.Colours.SHADOW) {
                 this.board[point.x][point.y].colour = TetrominoSquare.Colours.EMPTY;
             }
         }
 
+        // Update the shadow
         this.shadowCoordinates = calculateFall();
         renderShadow(shadowCoordinates);
-        
+
         dropLockTime = 0;
+        // Increment the drop lock reset count
         dropLockResetCount++;
-        
+
+        // Reset the drop lock if the piece can move down
         if (!tryMovePiece(MovementDirection.DOWN).isEmpty()) {
             dropLockResetCount = 0;
         }
@@ -475,7 +590,6 @@ public class TetrisBoard {
      *                  1 for clockwise, 3 for counter-clockwise
      * @return null if the piece cannot rotate, kick offset if can
      */
-    // TODO: Implement this
     public Point calculateRotation(int rotations) throws CloneNotSupportedException {
         rotations %= currentPiece.getNumberOfRotationStates();
 
@@ -483,22 +597,22 @@ public class TetrisBoard {
             return null;
         }
 
+        // Get a new piece with the rotation applied
         TetrominoShape rotated = currentPiece.clone();
         rotated.setRotation(currentPiece.getRotation() + rotations);
 
-
+        // Calculate the rotation
         Utils.Pair<Integer, Integer> rotation = new Utils.Pair<>(currentPiece.getRotation(), rotated.getRotation());
         Point[] kicks = new Point[]{new Point(0, 0)};
 
+        // Get the kicks
         if (this.currentPiece.shape != TetrominoShape.Shapes.I) {
             kicks = Tables.NON_I_WALL_KICK_DATA.get(rotation);
         } else if (Tables.I_WALL_KICK_DATA.containsKey(rotation)) {
             kicks = Tables.I_WALL_KICK_DATA.get(rotation);
         }
 
-//        System.out.println(rotation);
-//        System.out.println(Arrays.toString(kicks));
-
+        // Try each kick
         for (Point kick : kicks) {
             boolean canRotate = true;
             OuterLoop:
@@ -521,8 +635,6 @@ public class TetrisBoard {
             }
             if (canRotate) return kick;
         }
-        System.out.println();
-
         return null;
     }
 
@@ -531,7 +643,7 @@ public class TetrisBoard {
      *
      * @return A list of rows that were cleared
      */
-    public ArrayList<Integer> clearRows() {
+    public ArrayList<Integer> clearLines() {
         // Store all rows that might be full
         ArrayList<Integer> rowsToCheck = new ArrayList<>();
         for (Point point : this.currentPieceCoordinates) {
@@ -591,25 +703,5 @@ public class TetrisBoard {
         }
 
         this.highestPieceRow += numberOfRowsToMoveDown;
-    }
-
-    // TODO: Will remove this in the final game
-    public void printBoard() {
-        for (int i = 0; i < 24; i++) {
-            for (int j = 0; j < 10; j++) {
-                if (this.board[j][i].colour == TetrominoSquare.Colours.SHADOW) {
-                    System.out.print("\u001B[33m" + this.board[j][i].colour.ordinal() + "\u001B[0m");
-                } else if (i == currentPieceTopLeftCorner.y && j == currentPieceTopLeftCorner.x) {
-                    System.out.print("\u001B[35m" + this.board[j][i].colour.ordinal() + "\u001B[0m");
-                } else if (this.board[j][i].state == TetrominoSquare.State.EMPTY) {
-                    System.out.print("\u001B[31m" + this.board[j][i].colour.ordinal() + "\u001B[0m");
-                } else if (this.board[j][i].state == TetrominoSquare.State.FALLING) {
-                    System.out.print("\u001B[32m" + this.board[j][i].colour.ordinal() + "\u001B[0m");
-                } else {
-                    System.out.print("\u001B[34m" + this.board[j][i].colour.ordinal() + "\u001B[0m");
-                }
-            }
-            System.out.println();
-        }
     }
 }

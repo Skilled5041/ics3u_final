@@ -1,3 +1,7 @@
+// Aaron Ye
+// 2023-06-18
+// Tetromino Shape
+// Represents a single tetromino
 public class TetrominoShape implements Cloneable {
     // Possible shapes
     public enum Shapes {
@@ -242,15 +246,6 @@ public class TetrominoShape implements Cloneable {
                             TetrominoSquare.State.EMPTY);
                 }
             }
-        }
-    }
-
-    public void printPiece() {
-        for (int i = 0; i < TETROMINO_SHAPE_ARRAYS[shape.ordinal()][rotation].length; i++) {
-            for (int j = 0; j < TETROMINO_SHAPE_ARRAYS[shape.ordinal()][rotation][i].length; j++) {
-                System.out.print(TETROMINO_SHAPE_ARRAYS[shape.ordinal()][rotation][i][j] + " ");
-            }
-            System.out.println();
         }
     }
 }
