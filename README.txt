@@ -33,5 +33,6 @@ change your scale to 100% in settings for the graphics to work properly)
  (it should only take a couple of minutes at max to clear 40 lines)
 - Text may look weird sometimes, but that is an issue with the font
 - There may be some audio that plays when the sound setting is turned off (I think I fixed all of them, but I may have missed some)
-- When playing the game multiple times without restarting, the performance starts to decrease. However, when I run the game with a profiler, it goes away for some reason.
-- I am able to get it to run smoothly on my computer using the profiler mode of my IDE
+- When playing the game multiple times without restarting, the performance starts to decrease. I have spent over an hour trying to locate the bug, but I have not been able to find it.
+However, when I run the game with a profiler, it goes away for some reason.
+- I am able to get it to run smoothly and without lag on my computer using the profiler mode of my IDE
