@@ -216,12 +216,12 @@ public class Sprint implements Game.GameState {
                     tetris.hardDrop();
                     TetrisGraphics.playSound("hard_drop");
                 }
-                case KeyEvent.VK_Q, KeyEvent.VK_W, KeyEvent.VK_E -> {
+                case KeyEvent.VK_Z, KeyEvent.VK_X, KeyEvent.VK_C -> {
                     TetrisGraphics.playSound("rotate");
                     switch (e.getKeyCode()) {
-                        case KeyEvent.VK_Q -> tetris.rotatePiece(3);
-                        case KeyEvent.VK_W -> tetris.rotatePiece(2);
-                        case KeyEvent.VK_E -> tetris.rotatePiece(1);
+                        case KeyEvent.VK_Z -> tetris.rotatePiece(3);
+                        case KeyEvent.VK_X -> tetris.rotatePiece(2);
+                        case KeyEvent.VK_C -> tetris.rotatePiece(1);
                     }
                 }
                 case KeyEvent.VK_SHIFT -> tetris.hold();
